@@ -165,7 +165,7 @@ resource "google_compute_security_policy" "cloudarmor_main" {
 
 resource "google_compute_instance_group" "instancegroup_vscode" {
   name        = local.instancegroup_vscode_name
-  zone     = data.google_compute_zones.available.names[0]
+  zone     = data.google_compute_zones.available.names[1]
   instances   = [google_compute_instance.instance_vscode.self_link]
   named_port {
     name = "https"
