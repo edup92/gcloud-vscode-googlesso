@@ -112,7 +112,7 @@ resource "google_compute_resource_policy" "snapshot_policy" {
 resource "google_compute_disk_resource_policy_attachment" "disk_policy_attachment" {
   name    = google_compute_resource_policy.snapshot_policy.name
   disk    = google_compute_instance.instance_vscode.name
-  zone    = data.google_compute_zones.available.names[0]
+  zone    = data.google_compute_zones.available.names[1]
   project = var.gcloud_project_id
 
   depends_on = [google_compute_instance.instance_vscode]
