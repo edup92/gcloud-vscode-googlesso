@@ -277,6 +277,9 @@
             dest: "/opt/code-server/docker/docker-compose.yml"
             content: |
               version: "3.8"
+              networks:
+                code-net:
+                  driver: bridge
               services:
                 code:
                   build:
@@ -292,6 +295,7 @@
                   entrypoint: ["/entrypoint.sh"]
                   expose:
                     - "8443"
+                  networks: [code-net]
 
                 oauth2-proxy:
                   image: quay.io/oauth2-proxy/oauth2-proxy:latest
@@ -299,6 +303,7 @@
                   restart: always
                   ports:
                     - "443:4180"
+                  networks: [code-net]
                   volumes:
                     - ./oauth_allowed_emails.txt:/etc/oauth2_proxy/allowed_emails.txt:ro
                     - ../ssl:/ssl
