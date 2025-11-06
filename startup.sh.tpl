@@ -14,15 +14,7 @@ cat > /home/vscode/gcloud-vscode-googlesso/vars.json <<EOF
   "admin_email": "${admin_email}",
   "allowed_countries": ${allowed_countries},
   "oauth_client_id": "${oauth_client_id}",
-  "oauth_client_secret": "${oauth_client_secret}",
-  "bw_installation_id": "${bw_installation_id}",
-  "bw_installation_key": "${bw_installation_key}",
-  "bw_db_password": "${bw_db_password}",
-  "bw_smtp_host": "${bw_smtp_host}",
-  "bw_smtp_port": ${bw_smtp_port},
-  "bw_smtp_ssl": ${bw_smtp_ssl},
-  "bw_smtp_username": "${bw_smtp_username}",
-  "bw_smtp_password": "${bw_smtp_password}"
+  "oauth_client_secret": "${oauth_client_secret}"
 }
 EOF
 chown vscode:vscode /home/vscode/gcloud-vscode-googlesso/vars.json
