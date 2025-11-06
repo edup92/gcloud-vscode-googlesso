@@ -190,6 +190,38 @@
             group: code
             mode: "0644"
 
+        - name: Crear Dockerfile para code-server personalizado
+          copy:
+            dest: /opt/code-server/docker/Dockerfile
+            owner: code
+            group: code
+            mode: "0644"
+            content: |
+              FROM ghcr.io/coder/code-server:latest
+
+              # Instalar dependencias base
+              RUN apt-get update \
+                  && apt-get install -y git openssh-client curl gnupg software-properties-common python3 python3-pip
+
+              # Instalar Node.js (LTS)
+              RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+                  && apt-get install -y nodejs
+
+              # Instalar Terraform
+              RUN curl -fsSL https://apt.releases.hashicorp.com/gpg | gpg --dearmor > /usr/share/keyrings/hashicorp-archive-keyring.gpg \
+                  && echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" > /etc/apt/sources.list.d/hashicorp.list \
+                  && apt-get update && apt-get install -y terraform
+
+              # Instalar Ansible
+              RUN add-apt-repository --yes --update ppa:ansible/ansible \
+                  && apt-get install -y ansible
+
+              # Limpiar caché de apt
+              RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
+              # Usuario final
+              USER coder
+
         - name: Create entrypoint.sh
           copy:
             dest: /opt/code-server/docker/entrypoint.sh
@@ -202,6 +234,11 @@
               mkdir -p /home/coder/.ssh
               ln -sf /home/coder/config/github_pem /home/coder/.ssh/github_pem
               echo "Host github.com\n  IdentityFile ~/.ssh/github_pem\n  StrictHostKeyChecking no" > /home/coder/.ssh/config
+
+              echo "Configurando Git global..."
+              git config --global commit.template /workspaces/vscode/.devcontainer/.gitmessage.txt
+              git config --global user.name "code-server"
+              git config --global user.email "{{ admin_email }}"
 
               echo "Instalando extensiones VSCode..."
               code-server --install-extension github.copilot
@@ -242,7 +279,9 @@
               version: "3.8"
               services:
                 code:
-                  image: ghcr.io/coder/code-server:latest
+                  build:
+                    context: .
+                    dockerfile: Dockerfile
                   container_name: code-server
                   user: "1000:1000"
                   volumes:
