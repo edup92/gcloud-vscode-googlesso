@@ -81,6 +81,7 @@
             - { path: "/opt/code-server/ssl", mode: "0755" }
             - { path: "/opt/code-server/workspace", mode: "0775" }
             - { path: "/opt/code-server/config", mode: "0755" }
+            - { path: "/opt/code-server/config/vscode-user", mode: "0775" }
             - { path: "/opt/code-server/env", mode: "0755" }
 
     - name: Generate self signed SSL
@@ -131,49 +132,57 @@
             group: code
             mode: "0600"
 
-    - name: Generate Code settings.json
-      copy:
-        dest: "/opt/code-server/config/vscode-settings.json"
-        content: |
-          {
-            "editor.tabSize": 2,
-            "editor.insertSpaces": true,
-            "editor.detectIndentation": false,
-            "editor.defaultFormatter": "esbenp.prettier-vscode",
-            "python.formatting.provider": "black",
-            "editor.formatOnSave": true,
-            "editor.minimap.enabled": false,
-            "workbench.colorTheme": "Tokyo Night",
-            "window.commandCenter": false,
-            "editor.lineNumbers": "on",
-            "editor.stickyScroll.enabled": false,
-            "files.autoSave": "onWindowChange",
-            "workbench.editorAssociations": {
-                "*.md": "vscode.markdown.preview.editor",
-                "*.MD": "vscode.markdown.preview.editor"
-            },
-            "workbench.sideBar.location": "left",
-            "workbench.statusBar.visible": true,
-            "workbench.tree.enableStickyScroll": true,
-            "workbench.view.alwaysShowHeaderActions": false,
-            "window.density.editorTabHeight": "default",
-            "git.autofetch": false,
-            "git.enableSmartCommit": true,
-            "git.postCommitCommand": "sync",
-            "ansible.python.interpreterPath": "/usr/bin/python3",
-            "ansible.validation.lint.enabled": true,
-            "extensions": [
-              "github.copilot",
-              "hashicorp.terraform",
-              "redhat.ansible",
-              "ms-python.python",
-              "enkia.tokyo-night",
-              "esbenp.prettier-vscode"
-            ]
-          }
-        owner: code
-        group: code
-        mode: "0644"
+        - name: Generate Code settings.json
+          copy:
+            dest: "/opt/code-server/config/vscode-user/settings.json" 
+            content: |
+              {
+                "editor.tabSize": 2,
+                "editor.insertSpaces": true,
+                "editor.detectIndentation": false,
+                "editor.defaultFormatter": "esbenp.prettier-vscode",
+                "python.formatting.provider": "black",
+                "editor.formatOnSave": true,
+                "editor.minimap.enabled": false,
+                "workbench.colorTheme": "Tokyo Night",
+                "window.commandCenter": false,
+                "editor.lineNumbers": "on",
+                "editor.stickyScroll.enabled": false,
+                "files.autoSave": "onWindowChange",
+                "workbench.editorAssociations": {
+                    "*.md": "vscode.markdown.preview.editor",
+                    "*.MD": "vscode.markdown.preview.editor"
+                },
+                "workbench.sideBar.location": "left",
+                "workbench.statusBar.visible": true,
+                "workbench.tree.enableStickyScroll": true,
+                "workbench.view.alwaysShowHeaderActions": false,
+                "window.density.editorTabHeight": "default",
+                "git.autofetch": false,
+                "git.enableSmartCommit": true,
+                "git.postCommitCommand": "sync",
+                "ansible.python.interpreterPath": "/usr/bin/python3",
+                "ansible.validation.lint.enabled": true,
+                "extensions": [
+                  "github.copilot",
+                  "hashicorp.terraform",
+                  "redhat.ansible",
+                  "ms-python.python",
+                  "enkia.tokyo-night",
+                  "esbenp.prettier-vscode"
+                ]
+              }
+            owner: code
+            group: code
+            mode: "0644"
+
+        - name: Fix ownership for VSCode data
+          file:
+            path: /opt/code-server/config/vscode-user
+            owner: code
+            group: code
+            mode: "0775"
+            recurse: true
 
     - name: Create docker config files
       block:
@@ -188,8 +197,7 @@
 
         - name: Read cookie secret from file
           set_fact:
-            oauth_cookie_secret: "{{ lookup('file', '/opt/code-server/config/oauth_cookie_secret.txt') }}"
-
+            oauth_cookie_secret: "{{ lookup('file', '/opt/code-server/docker/oauth_cookie_secret.txt') }}"
 
         - name: Generate oauth proxy allowed accounts
           copy:
@@ -266,6 +274,7 @@
             group: code
             mode: "0755"
             content: |
+
               #!/bin/bash
 
               # --- Configurar SSH para GitHub ---
@@ -318,6 +327,7 @@
               OAUTH2_PROXY_CLIENT_SECRET={{ oauth_client_secret }}
               OAUTH2_PROXY_COOKIE_SECRET={{ oauth_cookie_secret }}
               OAUTH2_PROXY_REDIRECT_URL=https://{{ domain }}/oauth2/callback
+              OAUTH2_PROXY_COOKIE_DOMAIN={{ domain }}
               OAUTH2_PROXY_AUTHENTICATED_EMAILS_FILE=/etc/oauth2_proxy/allowed_emails.txt
               OAUTH2_PROXY_TLS_CERT_FILE=/ssl/fullchain.pem
               OAUTH2_PROXY_TLS_KEY_FILE=/ssl/privkey.pem
