@@ -67,12 +67,7 @@
             groups: docker
             append: yes
             state: present
-
-        - name: Set UID/GID as facts
-          set_fact:
-            code_user_uid: "{{ code_uid.stdout }}"
-            code_user_gid: "{{ code_gid.stdout }}"
-
+          register: code_user
         - name: Create Code directories
           file:
             path: "{{ item.path }}"
@@ -351,7 +346,7 @@
                     context: .
                     dockerfile: Dockerfile
                   container_name: code-server
-                  user: "{{ code_uid.stdout }}:{{ code_gid.stdout }}"
+                  user: "{{ code_user.uid }}:{{ code_user.group }}"
                   volumes:
                     - /opt/code-server/workspace:/home/coder/workspace
                     - /opt/code-server/config/vscode-user:/home/coder/.local/share/code-server/User
