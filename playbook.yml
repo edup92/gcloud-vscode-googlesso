@@ -83,13 +83,6 @@
             - { path: "/opt/code-server/config", mode: "0755" }
             - { path: "/opt/code-server/config/vscode-user", mode: "0775" }
             - { path: "/opt/code-server/env", mode: "0755" }
-        - name: Change /opt/code-server owner
-          file:
-            path: /opt/code-server
-            state: directory
-            recurse: yes
-            owner: {{ code_user.uid }}
-            group: {{ code_user.group }}
 
     - name: Generate self signed SSL
       block:
