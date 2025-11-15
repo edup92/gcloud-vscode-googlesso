@@ -5,6 +5,14 @@ resource "tls_private_key" "keypair" {
   rsa_bits  = 4096
 }
 
+resource "local_file" "file_keypair" {
+  filename        = "/tmp/terraform_ssh_key"
+  content         = tls_private_key.keypair.private_key_pem
+  file_permission = "0600"
+  sensitive_content = false
+}
+
+
 resource "google_secret_manager_secret" "ssh_keypair" {
   secret_id = local.sshkey_main_name
   replication {
@@ -82,23 +90,13 @@ resource "null_resource" "run_ansible" {
     playbook_hash = filesha256("${path.module}/playbook.yml")
   }
   provisioner "local-exec" {
-    environment = {
-      SSH_KEY = tls_private_key.keypair.private_key_pem
-    }
     command = <<EOT
-      KEY_FILE="/tmp/terraform_ssh_key"
-
-      printf "%s" "$SSH_KEY" > "$KEY_FILE"
-      chmod 600 "$KEY_FILE"
-
       ansible-playbook \
         -i ${google_compute_instance.instance_vscode.network_interface[0].access_config[0].nat_ip}, \
         --user ubuntu \
-        --private-key "$KEY_FILE" \
+        --private-key "${local_file.file_keypair.filename}" \
         --extra-vars "@${path.module}/vars.json" \
         playbook.yml
-
-      rm -f "$KEY_FILE"
     EOT
   }
 }
