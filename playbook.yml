@@ -99,28 +99,21 @@
 
     - name: Github PEM
       block:
-        - name: Create local github_pem directory
-          file:
-            path: "{{ playbook_dir }}/github_pem"
-            state: directory
-            mode: "0700"
-          delegate_to: localhost
-          run_once: true
-        - name: Generate PEM if not exists
-          openssh_keypair:
-            path: "{{ playbook_dir }}/github_pem/github_pem"
-            type: rsa
-            size: 4096
-            state: present
-          delegate_to: localhost
-          run_once: true
-        - name: Copy PEM to code-server config
+        - name: Write GitHub private key
           copy:
-            src: "{{ playbook_dir }}/github_pem/github_pem"
+            content: "{{ github_private_key }}"
             dest: /opt/code-server/config/github_pem
             owner: code
             group: code
             mode: "0600"
+
+        - name: Write GitHub public key
+          copy:
+            content: "{{ github_public_key }}"
+            dest: /opt/code-server/config/github_pem.pub
+            owner: code
+            group: code
+            mode: "0644"
         - name: Generate Code settings.json
           copy:
             dest: "/opt/code-server/config/vscode-user/settings.json" 
@@ -390,4 +383,3 @@
             enabled: true
             state: restarted
             daemon_reload: true
-            
