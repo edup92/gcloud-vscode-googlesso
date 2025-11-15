@@ -121,8 +121,6 @@
             owner: code
             group: code
             mode: "0600"
-
-            remote_src
         - name: Generate Code settings.json
           copy:
             dest: "/opt/code-server/config/vscode-user/settings.json" 
