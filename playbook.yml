@@ -191,7 +191,8 @@
                     wget \
                     git \
                     gnupg \
-                    nano \ 
+                    nano \
+                    jq \
                     lsb-release \
                     ca-certificates \
                     software-properties-common \
