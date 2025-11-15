@@ -39,7 +39,7 @@ resource "google_secret_manager_secret_version" "secretversion_pem_ssh" {
 }
 
 resource "google_secret_manager_secret_version" "secretversion_pem_github" {
-  secret      = google_secret_manager_secret.github_key.id
+  secret      = google_secret_manager_secret.secret_pem_github.id
   secret_data = jsonencode({
     private_key = tls_private_key.pem_github.private_key_pem
     public_key  = tls_private_key.pem_github.public_key_openssh
