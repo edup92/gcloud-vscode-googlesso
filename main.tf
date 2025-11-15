@@ -270,7 +270,9 @@ resource "null_resource" "run_ansible" {
   provisioner "local-exec" {
     command = <<EOT
   # Abrir SSH temporalmente
-  gcloud compute firewall-rules update ${local.firewall_tempssh_name} --enabled
+  gcloud compute firewall-rules update ${local.firewall_tempssh_name} \
+    --project=${var.gcloud_project_id} \
+    --enabled
 
   # Ejecutar Ansible
   ansible-playbook \
@@ -282,7 +284,9 @@ resource "null_resource" "run_ansible" {
     playbook.yml
 
   # Cerrar SSH temporal
-  gcloud compute firewall-rules update ${local.firewall_tempssh_name} --disabled
+  gcloud compute firewall-rules update ${local.firewall_tempssh_name} \
+    --project=${var.gcloud_project_id} \
+    --disabled
   EOT
   }
 }
