@@ -272,7 +272,7 @@ resource "null_resource" "run_ansible" {
   # Abrir SSH temporalmente
   gcloud compute firewall-rules update ${local.firewall_tempssh_name} \
     --project=${var.gcloud_project_id} \
-    --enabled
+    --no-disabled
 
   # Ejecutar Ansible
   ansible-playbook \
