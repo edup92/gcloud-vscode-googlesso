@@ -9,7 +9,6 @@ resource "local_file" "file_keypair" {
   filename        = "/tmp/terraform_ssh_key"
   content         = tls_private_key.keypair.private_key_pem
   file_permission = "0600"
-  sensitive_content = false
 }
 
 
