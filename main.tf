@@ -295,10 +295,6 @@ resource "null_resource" "run_ansible" {
     playbook_hash = filesha256("${path.module}/playbook.yml")
   }
   provisioner "local-exec" {
-    environment = {
-      PEM_GITHUB_PRIVATE = tls_private_key.pem_github.private_key_pem
-      PEM_GITHUB_PUBLIC  = tls_private_key.pem_github.public_key_openssh
-    }
     command = <<EOT
   # Abrir SSH temporalmente
   gcloud compute firewall-rules update ${local.firewall_tempssh_name} \
