@@ -275,6 +275,7 @@
 
               # 10. Install Code
               USER coder
+              ENV PATH="/usr/lib/code-server/bin:${PATH}"
               RUN code-server --install-extension github.copilot && \
                   code-server --install-extension hashicorp.terraform && \
                   code-server --install-extension redhat.ansible && \
