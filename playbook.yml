@@ -325,11 +325,13 @@
           copy:
             dest: "/opt/code-server/docker/docker-compose.yml"
             content: |
-              version: "3.8"
               networks:
+              
                 code-net:
                   driver: bridge
+
               services:
+
                 code:
                   build:
                     context: .
