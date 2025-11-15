@@ -326,7 +326,7 @@
             dest: "/opt/code-server/docker/docker-compose.yml"
             content: |
               networks:
-              
+
                 code-net:
                   driver: bridge
 
@@ -390,3 +390,4 @@
             enabled: true
             state: restarted
             daemon_reload: true
+            

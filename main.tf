@@ -30,7 +30,7 @@ resource "google_secret_manager_secret_version" "ssh_keypair_version" {
 resource "google_compute_project_metadata" "metadata_keypair" {
   project = var.gcloud_project_id
   metadata = {
-    ssh-keys = "vscode:${tls_private_key.keypair.public_key_openssh}"
+    ssh-keys = "ubuntu:${tls_private_key.keypair.public_key_openssh}"
   }
 }
 
