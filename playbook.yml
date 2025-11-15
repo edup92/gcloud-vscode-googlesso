@@ -160,9 +160,13 @@
             group: code
             mode: "0600"
             force: no
-        - name: Read cookie secret from file
+        - name: Read cookie secret from remote file
+          slurp:
+            src: /opt/code-server/docker/oauth_cookie_secret.txt
+          register: cookie_secret_raw
+        - name: Set fact for cookie secret
           set_fact:
-            oauth_cookie_secret: "{{ lookup('file', '/opt/code-server/docker/oauth_cookie_secret.txt') }}"
+            oauth_cookie_secret: "{{ cookie_secret_raw.content | b64decode }}"    
         - name: Generate oauth proxy allowed accounts
           copy:
             dest: "/opt/code-server/docker/oauth_allowed_emails.txt"
