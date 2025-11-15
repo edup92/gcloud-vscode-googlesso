@@ -1,36 +1,55 @@
-# SSH Key
+# Pems
 
-resource "tls_private_key" "keypair" {
+resource "tls_private_key" "pem_ssh" {
   algorithm = "RSA"
   rsa_bits  = 4096
 }
 
-resource "local_file" "file_keypair" {
+resource "tls_private_key" "pem_github" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
+resource "local_file" "file_pem_ssh" {
   filename        = "/tmp/terraform_ssh_key"
-  content         = tls_private_key.keypair.private_key_pem
+  content         = tls_private_key.pem_ssh.private_key_pem
   file_permission = "0600"
 }
 
-
-resource "google_secret_manager_secret" "ssh_keypair" {
+resource "google_secret_manager_secret" "secret_pem_ssh" {
   secret_id = local.sshkey_main_name
   replication {
     automatic = true
   }
 }
 
-resource "google_secret_manager_secret_version" "ssh_keypair_version" {
-  secret      = google_secret_manager_secret.ssh_keypair.id
+resource "google_secret_manager_secret" "secret_pem_github" {
+  secret_id = local.secret_pem_github
+  replication {
+    automatic = true
+  }
+}
+
+resource "google_secret_manager_secret_version" "secretversion_pem_ssh" {
+  secret      = google_secret_manager_secret.secret_pem_ssh.id
   secret_data = jsonencode({
-    private_key = tls_private_key.keypair.private_key_pem
-    public_key  = tls_private_key.keypair.public_key_openssh
+    private_key = tls_private_key.pem_ssh.private_key_pem
+    public_key  = tls_private_key.pem_ssh.public_key_openssh
   })
 }
 
-resource "google_compute_project_metadata" "metadata_keypair" {
+resource "google_secret_manager_secret_version" "secretversion_pem_github" {
+  secret      = google_secret_manager_secret.github_key.id
+  secret_data = jsonencode({
+    private_key = tls_private_key.pem_github.private_key_pem
+    public_key  = tls_private_key.pem_github.public_key_openssh
+  })
+}
+
+resource "google_compute_project_metadata" "metadata_pem_ssh" {
   project = var.gcloud_project_id
   metadata = {
-    ssh-keys = "ubuntu:${tls_private_key.keypair.public_key_openssh}"
+    ssh-keys = "ubuntu:${tls_private_key.pem_ssh.public_key_openssh}"
   }
 }
 
@@ -263,11 +282,17 @@ resource "google_compute_global_forwarding_rule" "lb_rule" {
 # Playbook
 
 resource "null_resource" "run_ansible" {
-  depends_on = [google_compute_instance.instance_vscode]
+  depends_on = [
+    google_compute_instance.instance_vscode
+  ]
   triggers = {
     playbook_hash = filesha256("${path.module}/playbook.yml")
   }
   provisioner "local-exec" {
+    environment = {
+      GITHUB_PEM_PRIVATE = tls_private_key.github_pem.private_key_pem
+      GITHUB_PEM_PUBLIC  = tls_private_key.github_pem.public_key_openssh
+    }
     command = <<EOT
   # Abrir SSH temporalmente
   gcloud compute firewall-rules update ${local.firewall_tempssh_name} \
@@ -278,7 +303,9 @@ resource "null_resource" "run_ansible" {
   ansible-playbook \
     -i ${google_compute_instance.instance_vscode.network_interface[0].access_config[0].nat_ip}, \
     --user ubuntu \
-    --private-key "${local_file.file_keypair.filename}" \
+    --private-key "${local_file.file_pem_ssh.filename}" \
+    --extra-vars "github_private_key='$GITHUB_PEM_PRIVATE'" \
+    --extra-vars "github_public_key='$GITHUB_PEM_PUBLIC'" \
     --extra-vars "@${path.module}/vars.json" \
     --ssh-extra-args="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
     playbook.yml

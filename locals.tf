@@ -2,11 +2,15 @@
 locals {
   # Instances
 
-  sshkey_main_name    = "${var.project_name}-sshkey-main"
   instance_vscode_name  = "${var.project_name}-instance-main"
   disk_vscode_name       = "${var.project_name}-disk-main"
   snapshot_vscode_name = "${var.project_name}-snapshot-main"
   instancegroup_vscode_name = "${var.project_name}-instancegroup-main"
+
+  # Secrets
+
+  secret_pem_ssh    = "${var.project_name}-secret-pem-ssh"
+  secret_pem_github = "${var.project_name}-secret-pem-github"
 
   # Network
 
