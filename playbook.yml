@@ -370,7 +370,13 @@
               Type=oneshot
               RemainAfterExit=yes
               WorkingDirectory=/opt/code-server/docker
-              ExecStart=/usr/bin/docker compose up -d --build
+              # Debug solo para build + launch
+              Environment=COMPOSE_DOCKER_CLI_BUILD=1
+              Environment=DOCKER_BUILDKIT=1
+
+              # --verbose => verbose del compose
+              # --build   => rebuild si es necesario
+              ExecStart=/usr/bin/docker compose --verbose up -d --build
               ExecStop=/usr/bin/docker compose down
               TimeoutStartSec=0
 
