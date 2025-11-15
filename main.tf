@@ -83,23 +83,7 @@ resource "google_compute_instance" "instance_vscode" {
 
 # Playbook
 
-resource "null_resource" "run_ansible" {
-  depends_on = [google_compute_instance.instance_vscode]
-  triggers = {
-    playbook_hash = filesha256("${path.module}/playbook.yml")
-  }
-  provisioner "local-exec" {
-    command = <<EOT
-      ansible-playbook \
-        -i ${google_compute_instance.instance_vscode.network_interface[0].access_config[0].nat_ip}, \
-        --user ubuntu \
-        --private-key "${local_file.file_keypair.filename}" \
-        --extra-vars "@${path.module}/vars.json" \
-        --ssh-extra-args="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
-        playbook.yml
-    EOT
-  }
-}
+
 
 # Snapshot
 
