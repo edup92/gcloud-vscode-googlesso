@@ -81,26 +81,6 @@ resource "google_compute_instance" "instance_vscode" {
   tags = [local.instance_vscode_name]
 }
 
-# Playbook
-
-resource "null_resource" "run_ansible" {
-  depends_on = [google_compute_instance.instance_vscode]
-  triggers = {
-    playbook_hash = filesha256("${path.module}/playbook.yml")
-  }
-  provisioner "local-exec" {
-    command = <<EOT
-      ansible-playbook \
-        -i ${google_compute_instance.instance_vscode.network_interface[0].access_config[0].nat_ip}, \
-        --user ubuntu \
-        --private-key "${local_file.file_keypair.filename}" \
-        --extra-vars "@${path.module}/vars.json" \
-        --ssh-extra-args="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
-        playbook.yml
-    EOT
-  }
-}
-
 # Snapshot
 
 resource "google_compute_resource_policy" "snapshot_policy" {
@@ -173,7 +153,6 @@ resource "google_compute_firewall" "allow_temp_ssh" {
   target_tags   = [local.instance_vscode_name]
   disabled = true
 }
-
 
 # Cloud armor
 
@@ -281,7 +260,29 @@ resource "google_compute_global_forwarding_rule" "lb_rule" {
   ip_address            = google_compute_global_address.lb_ip.address
 }
 
-# Record
+# Playbook
+
+resource "null_resource" "run_ansible" {
+  depends_on = [google_compute_instance.instance_vscode]
+  triggers = {
+    playbook_hash = filesha256("${path.module}/playbook.yml")
+  }
+  provisioner "local-exec" {
+    command = <<EOT
+      gcloud compute firewall-rules update ${local.firewall_tempssh_name}" --enable
+      ansible-playbook \
+        -i ${google_compute_instance.instance_vscode.network_interface[0].access_config[0].nat_ip}, \
+        --user ubuntu \
+        --private-key "${local_file.file_keypair.filename}" \
+        --extra-vars "@${path.module}/vars.json" \
+        --ssh-extra-args="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
+        playbook.yml
+        gcloud compute firewall-rules update ${local.firewall_tempssh_name}" --disable
+    EOT
+  }
+}
+
+# Output
 
 output "vscode_lb_ip" {
   description = "Public IP address of the HTTPS Load Balancer"
