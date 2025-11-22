@@ -7,6 +7,13 @@ if [ ! -f "$VARS_JSON_PATH" ]; then
 	exit 1
 fi
 
+# Github PEM
+PEM_PATH="$(dirname "$0")/pem_github_private"
+if [ ! -f "$PEM_PATH" ]; then
+	echo "ERROR: pem_github_private file does not exist. Cancelling run."
+	exit 1
+fi
+
 project_name=$(jq -r '.project_name' "$VARS_JSON_PATH")
 gcloud_project_id=$(jq -r '.gcloud_project_id' "$VARS_JSON_PATH")
 gcloud_region=$(jq -r '.gcloud_region' "$VARS_JSON_PATH")
