@@ -34,15 +34,24 @@ cat > gcloud-vscode-googlesso/vars.json <<EOF
 EOF
 ```
 
-### 5) Run runme.sh
+### 5) Paste github private key pem file as pem_github_private file
+```bash
+cat > gcloud-vscode-googlesso/pem_github_private <<EOF
+-----BEGIN OPENSSH PRIVATE KEY-----
+....
+-----END OPENSSH PRIVATE KEY-----
+EOF
+```
+
+### 6) Run runme.sh
 
 ```bash
 chmod +x gcloud-vscode-googlesso/runnme.sh ; gcloud-vscode-googlesso/runnme.sh
 ```
 
-### 6) Point the ip to the record in your DNS zone
+### 7) Point the ip to the record in your DNS zone
 
-### 7) Save PEM SSH and PEM Github and OAuth Key and secret from Gcloud secrets
+### 8) Save PEM SSH and PEM Github and OAuth Key and secret from Gcloud secrets
 
 ### View status
 ```bash
