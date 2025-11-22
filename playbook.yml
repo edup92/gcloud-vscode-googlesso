@@ -295,12 +295,12 @@
             content: |
               #!/bin/bash
 
-              # Copiar clave privada dinámica
-              if [ -f /opt/code-server/config/github_pem ]; then
-                  cp /opt/code-server/config/github_pem /home/coder/.ssh/id_rsa
-                  chmod 600 /home/coder/.ssh/id_rsa
-                  chown coder:coder /home/coder/.ssh/id_rsa
-              fi
+              # Private key
+
+              chmod 600 /home/coder/.ssh/id_rsa
+              chown coder:coder /home/coder/.ssh/id_rsa
+
+              # Extensions
 
               EXT_DIR="/home/coder/.local/share/code-server/extensions"
               if [ ! -d "$EXT_DIR" ] || [ -z "$(ls -A $EXT_DIR)" ]; then
@@ -314,9 +314,7 @@
               fi
 
               # Lanzar code-server en workspace
-              exec code-server \
-                --bind-addr 0.0.0.0:8443 \
-                --auth none
+              exec code-server --bind-addr 0.0.0.0:8443 --auth none
         - name: Generate OAuth Proxy env
           copy:
             dest: "/opt/code-server/env/oauth-proxy.env"
@@ -361,7 +359,7 @@
                   volumes:
                     - /opt/code-server/workspace:/home/coder/workspace
                     - /opt/code-server/config/vscode-user:/home/coder/.local/share/code-server/User
-                    - /opt/code-server/config/github_pem:/opt/code-server/config/github_pem
+                    - /opt/code-server/config/github_pem:/home/coder/.ssh/id_rsa
                     - ./entrypoint.sh:/entrypoint.sh
                   entrypoint: ["/entrypoint.sh"]
                   networks:
