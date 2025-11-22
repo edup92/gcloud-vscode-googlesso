@@ -326,16 +326,18 @@
               OAUTH2_PROXY_CLIENT_SECRET={{ oauth_client_secret }}
               OAUTH2_PROXY_COOKIE_SECRET={{ oauth_cookie_secret }}
               OAUTH2_PROXY_REDIRECT_URL=https://{{ domain }}/oauth2/callback
-              OAUTH2_PROXY_COOKIE_DOMAIN={{ domain }}
               OAUTH2_PROXY_AUTHENTICATED_EMAILS_FILE=/etc/oauth2_proxy/allowed_emails.txt
+              OAUTH2_PROXY_COOKIE_DOMAIN={{ domain }}
               OAUTH2_PROXY_TLS_CERT_FILE=/ssl/fullchain.pem
               OAUTH2_PROXY_TLS_KEY_FILE=/ssl/privkey.pem
               OAUTH2_PROXY_HTTP_ADDRESS=0.0.0.0:443
-              OAUTH2_PROXY_UPSTREAMS=http://code:8443
-              OAUTH2_PROXY_COOKIE_SECURE=true
-              OAUTH2_PROXY_SET_XAUTHREQUEST=true
               OAUTH2_PROXY_PASS_USER_HEADERS=true
+              OAUTH2_PROXY_SET_XAUTHREQUEST=true
               OAUTH2_PROXY_SKIP_PROVIDER_BUTTON=true
+              OAUTH2_PROXY_UPSTREAMS=https://code:8443
+              OAUTH2_PROXY_SSL_INSECURE_SKIP_VERIFY=true
+              OAUTH2_PROXY_COOKIE_SECURE=true
+              OAUTH2_PROXY_PROXY_HEADERS=X-Forwarded-Proto:https
             owner: code
             group: code
             mode: "0600"
@@ -370,6 +372,7 @@
                   image: quay.io/oauth2-proxy/oauth2-proxy:latest
                   container_name: code-oauth2-proxy
                   restart: unless-stopped
+                  user: "{{ code_user.uid }}:{{ code_user.group }}"
                   ports:
                     - "443:443"
                   networks:
