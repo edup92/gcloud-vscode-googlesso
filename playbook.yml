@@ -332,7 +332,7 @@
               OAUTH2_PROXY_PASS_USER_HEADERS=true
               OAUTH2_PROXY_SET_XAUTHREQUEST=true
               OAUTH2_PROXY_SKIP_PROVIDER_BUTTON=true
-              OAUTH2_PROXY_UPSTREAMS=https://code:8443
+              OAUTH2_PROXY_UPSTREAMS=http://code:8443
               OAUTH2_PROXY_SSL_INSECURE_SKIP_VERIFY=true
               OAUTH2_PROXY_COOKIE_SECURE=true
               OAUTH2_PROXY_PROXY_HEADERS=X-Forwarded-Proto:https
