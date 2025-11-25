@@ -266,14 +266,14 @@
                   chown coder:coder /home/coder/.ssh/config && \
                   chmod 600 /home/coder/.ssh/config
 
-              # 12. Git global config
+              # 12. Cambiar a usuario coder
+              USER coder
+              ENV HOME=/home/coder
+
+              # 13. Git global config
               RUN git config --global user.name "code-server" && \
                   git config --global user.email "{{ admin_email }}" && \
                   git config --global commit.template /home/coder/.gitmessage.txt
-
-              # 13. Cambiar a usuario coder
-              USER coder
-              ENV HOME=/home/coder
 
               # 14. WORKDIR
               WORKDIR /home/coder/workspace
@@ -360,12 +360,12 @@
                   entrypoint: ["/entrypoint.sh"]
                   networks:
                     - code-net
-                  restart: unless-stopped
+                  restart: always
 
                 oauth2-proxy:
                   image: quay.io/oauth2-proxy/oauth2-proxy:latest
                   container_name: code-oauth2-proxy
-                  restart: unless-stopped
+                  restart: always
                   user: "{{ code_user.uid }}:{{ code_user.group }}"
                   ports:
                     - "443:443"
