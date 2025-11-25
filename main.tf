@@ -268,7 +268,7 @@ resource "null_resource" "run_ansible" {
     google_compute_firewall.allow_temp_ssh
   ]
   triggers = {
-    playbook_hash = filesha256("${path.module}/playbook.yml")
+    playbook_hash = filesha256("${path.module}/playbook_vscode.yml")
   }
   provisioner "local-exec" {
     command = <<EOT
