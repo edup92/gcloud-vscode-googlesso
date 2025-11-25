@@ -235,8 +235,11 @@
                   apt-get install -y --no-install-recommends ansible && \
                   rm -rf /var/lib/apt/lists/*
 
-              # 7. Instalar code-server
-              RUN curl -fsSL https://code-server.dev/install.sh | bash
+              # 7. Instalar vscode
+              RUN curl -L https://code.visualstudio.com/sha/download?build=stable&os=cli-linux-x64 -o vscode-cli.tar.gz \
+                && tar -xzf vscode-cli.tar.gz \
+                && mv code /usr/local/bin/code \
+                && rm vscode-cli.tar.gz
 
               # 8. Crear usuario vscode
               RUN useradd -m vscode && \
