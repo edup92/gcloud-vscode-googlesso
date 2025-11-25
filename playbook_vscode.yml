@@ -386,7 +386,7 @@
             mode: "0644"
         - name: Create systemd service for Code
           copy:
-            dest: "/etc/systemd/system/vscode.service"
+            dest: "/etc/systemd/system/vscode-server.service"
             content: |
               [Unit]
               Description=Code Docker Compose
@@ -410,9 +410,9 @@
               [Install]
               WantedBy=multi-user.target
             mode: "0644"
-        - name: Enable and start Code service
+        - name: Enable and start vscode-server service
           systemd:
-            name: vscode
+            name: vscode-server
             enabled: true
             state: restarted
             daemon_reload: true
