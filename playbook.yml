@@ -145,7 +145,7 @@
                 ],
                 "chat.disableAIFeatures": true,
                 "chatgpt.openOnStartup": true,
-                "chatgpt.model": "gpt-5.1",
+                "openai.chatgpt.defaultModel": "gpt-5.1"
               }
             owner: code
             group: code
