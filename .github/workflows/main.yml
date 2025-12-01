@@ -1,0 +1,103 @@
+name: main
+
+on:
+  workflow_dispatch:
+  
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Terraform CLI
+        uses: hashicorp/setup-terraform@v3
+      - name: Setup Ansible
+        run: sudo apt-get install -y ansible
+      - name: Check VARS secret exists
+        env:
+          VARS_JSON: ${{ secrets.VARS_JSON }}
+        run: |
+          if [ -z "$VARS_JSON" ]; then
+            echo "Error: Secret VARS is missing or empty"
+            exit 1
+          fi
+      - name: Export VARS env as outputs
+        id: export_vars
+        env:
+          VARS_JSON: ${{ secrets.VARS_JSON }}
+        run: |
+          echo "$VARS_JSON" | jq -r 'to_entries[] | "\(.key)=\(.value)"' \
+            | while IFS= read -r line; do
+                echo "$line" >> $GITHUB_OUTPUT
+                echo "Output ${line%%=*}"
+              done
+      - name: Create vars.json from secret
+        run: |
+          echo '${{ secrets.VARS_JSON }}' > vars.json
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.SERVICE_ACCOUNT }} 
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{steps.export_vars.outputs.gcloud_project_id}}
+      - name: Creates / Checks state bucket (GCS)
+        env:
+          BUCKET_NAME: ${{ steps.export_vars.outputs.project_name }}-bucket-tfstate
+          GCP_PROJECT: ${{ steps.export_vars.outputs.gcloud_project_id }}
+          GCP_REGION: ${{ steps.export_vars.outputs.gcloud_region }}
+        run: |
+          # 1. Check if bucket exists
+          if gsutil ls -p "$GCP_PROJECT" "gs://$BUCKET_NAME" >/dev/null 2>&1; then
+            echo "Bucket already exists: $BUCKET_NAME"
+          else
+            echo "Bucket does not exist. Creating: $BUCKET_NAME"
+
+            # 2. Create bucket with region
+            echo "Creating bucket in region: $GCP_REGION"
+            gsutil mb -p "$GCP_PROJECT" -l "$GCP_REGION" "gs://$BUCKET_NAME"
+
+            # 3. Block all public access (recommended)
+            echo "Enabling uniform bucket-level access"
+            gcloud storage buckets update gs://$BUCKET_NAME --uniform-bucket-level-access
+
+            # 4. Enable versioning
+            echo "Enabling versioning"
+            gsutil versioning set on "gs://$BUCKET_NAME"
+          fi
+      - name: Create TF Backend (jq -> backend.tf.json)
+        env:
+          BUCKET_NAME: ${{steps.export_vars.outputs.project_name}}-bucket-tfstate
+          AWS_REGION: ${{steps.export_vars.outputs.aws_region}}
+        run: |
+          tee backend.tf > /dev/null <<EOF
+          terraform {
+            backend "gcs" {
+              bucket = "$BUCKET_NAME"
+              prefix    = ""
+            }
+          }
+          EOF
+          echo "backend.tf created"
+      - name: Terraform init
+        run: terraform init -input=false
+      - name: Terraform plan (using vars.json)
+        run: terraform plan -input=false -no-color -var-file=vars.json -out=tfplan
+      - name: Terraform show
+        run: terraform show -no-color tfplan > plan.txt
+      - name: Await Manual Approval
+        id: approval
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ secrets.GITHUB_TOKEN }}
+          minimum-approvals: 1
+          approvers: ${{ github.actor }}
+          issue-title: "Manual Approval Required for Terraform Apply"
+          issue-body-file-path: plan.txt
+      - name: Terraform apply
+        run: terraform apply -auto-approve tfplan

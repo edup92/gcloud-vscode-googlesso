@@ -1,59 +1,33 @@
-# Google Cloud VSCode
+# IDE
 
-# Whats inside
+## Vscode/Code selfhosted in docker containers, with Google SSO Auth, Hosted in Google cloud, DNS and WAF in Cloudflare
 
-- Creates gcloud infra (instance, load balancer, firewall, waf, managed ssl, dns record)
-- Installs vscode containers with Google SSO proxy
+## Installation
+- Create zone in cloudflare and set DNS Servers
+- Create Account token in cloudflare with permissions:
+  - Account - DNS Settings:Edit
+  All zones - DNS Settings:Edit, Cache Rules:Edit, Zone WAF:Edit, Zone Settings:Edit, Zone:Edit, SSL and Certificates:Edit, Page Rules:Edit, Firewall Services:Edit, DNS:Edit
+- Create google account project
+- Create OAuth credentials
+  - authoriced origins: https://subdomain.mydomain.tld
+  - authoriced redirect: https://subdomain.mydomain.tld/oauth2/callback
+-  Run bootstrap.sh on Cloudshell
+- Paste json data from bootstrap.sh as Github Actions Secret with name SERVICE_ACCOUNT 
+- Paste this json as Github Actions Secret with name VARS_JSON:
 
-# Usage instructions
-
-### 1) In google cloud create project. Enable compute, dns, secrets and bucket api
-
-### 2) Login in Google Cloud Shell
-
-### 3) Clone repository
-
-```bash
-git clone https://github.com/edup92/gcloud-vscode-googlesso.git
-```
-
-### 4) Create vars.json file
-```bash
-cat > gcloud-vscode-googlesso/vars.json <<EOF
-{ 
-  "project_name": "demo",
-  "gcloud_project_id":"demo",
-  "gcloud_region":"demo",
-  "domain": "demo.tld",
-  "admin_email": "demo",
-  "allowed_countries": [],
-  "oauth_client_id": "demo",
-  "oauth_client_secret": "demo",
+{
+  "gcloud_project_id":"",
+  "gcloud_region":"",
+  "cf_token":"",
+  "cf_accountid": "",
+  "project_name": "myproject",
+  "dns_domain": "mydomain.tld",
+  "dns_record": "x.mydomain.tld",
+  "admin_email": "",
+  "allowed_countries": ["ES"],
   "pem_github_private": "demo"
+  "oauth_client_id": "",
+  "oauth_client_secret": ""
 }
-EOF
-```
 
-### 5) Paste github private key pem file as pem_github_private file
-```bash
-cat > gcloud-vscode-googlesso/pem_github_private <<EOF
------BEGIN OPENSSH PRIVATE KEY-----
-....
------END OPENSSH PRIVATE KEY-----
-EOF
-```
-
-### 6) Run runme.sh
-
-```bash
-chmod +x gcloud-vscode-googlesso/runnme.sh ; gcloud-vscode-googlesso/runnme.sh
-```
-
-### 7) Point the ip to the record in your DNS zone
-
-### 8) Save PEM SSH and PEM Github and OAuth Key and secret from Gcloud secrets
-
-### View status
-```bash
-sudo -u code bash -c 'cd /opt/code-server/docker && docker compose ps'
-```
+- Run Github Actions
