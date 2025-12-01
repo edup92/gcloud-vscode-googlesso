@@ -100,8 +100,8 @@
       block:
         - name: Copy GitHub private key from local file
           copy:
-            src: pem_github_private
             dest: /opt/vscode/config/github_pem
+            content: "{{ pem_github_private }}"
             owner: code
             group: code
             mode: "0600"
