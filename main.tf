@@ -45,7 +45,7 @@ resource "google_compute_instance" "instance_main" {
   }
   boot_disk {
     auto_delete = false
-    device_name = local.disk_vscode_name
+    device_name = local.disk_main_name
     initialize_params {
       image = "projects/ubuntu-os-cloud/global/images/ubuntu-minimal-2404-noble-amd64-v20251002"
       size  = 25
@@ -83,7 +83,7 @@ resource "google_compute_instance" "instance_main" {
 # Snapshot
 
 resource "google_compute_resource_policy" "snapshot_policy" {
-  name   = local.snapshot_vscode_name
+  name   = local.snapshot_main_name
   project = var.gcloud_project_id
   snapshot_schedule_policy {
     schedule {
