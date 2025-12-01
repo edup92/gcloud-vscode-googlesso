@@ -2,10 +2,9 @@
 locals {
   # Instances
 
-  instance_vscode_name  = "${var.project_name}-instance-main"
-  disk_vscode_name       = "${var.project_name}-disk-main"
-  snapshot_vscode_name = "${var.project_name}-snapshot-main"
-  instancegroup_vscode_name = "${var.project_name}-instancegroup-main"
+  instance_main_name  = "${var.project_name}-instance-main"
+  disk_main_name       = "${var.project_name}-disk-main"
+  snapshot_main_name = "${var.project_name}-snapshot-main"
 
   # Secrets
 
