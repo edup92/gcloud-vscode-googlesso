@@ -155,6 +155,33 @@ resource "google_compute_firewall" "allow_temp_ssh" {
 
 # Playbook
 
+resource "null_resource" "null_ansible_install" {
+  depends_on = [
+    local_file.file_pem_ssh,
+    google_compute_instance.instance_main,
+    google_compute_firewall.allow_temp_ssh,
+    aws_ssm_parameter.ssm_ansible_install
+  ]
+  triggers = {
+    instance_id   = google_compute_instance.instance_main
+    playbook_hash = filesha256("${path.module}/src/ansible/install_original.yml")
+    completion_id = aws_ssm_parameter.ssm_ansible_install.value
+  }
+  provisioner "local-exec" {
+    environment = {
+      INSTANCE_IP    = aws_eip.eip_main.public_ip
+      INSTANCE_ID    = aws_instance.instance_main.id
+      FW_TEMPSSH_ID  = aws_security_group.sg_tempssh.id
+      SSH_KEY        = local_file.file_pem_ssh.filename
+      SSM_PARAM_NAME = aws_ssm_parameter.ssm_ansible_install.name
+      VARS_FILE      = "${path.module}/vars.json"
+      PLAYBOOK_PATH = "${path.module}/src/ansible/install.yml"
+    }
+    command = "chmod +x ${path.module}/src/null_resource/ansible.sh && ${path.module}/src/null_resource/ansible.sh"
+  }
+}
+
+
 resource "null_resource" "run_ansible" {
   depends_on = [
     google_compute_instance.instance_main,
