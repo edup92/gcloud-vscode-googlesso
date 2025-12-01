@@ -215,10 +215,3 @@ resource "null_resource" "run_ansible" {
   EOT
   }
 }
-
-# Output
-
-output "vscode_lb_ip" {
-  description = "Public IP address of the HTTPS Load Balancer"
-  value       = google_compute_global_address.lb_ip.address
-}
