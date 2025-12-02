@@ -172,7 +172,6 @@ resource "null_resource" "null_ansible_install" {
       INSTANCE_USER  = "ubuntu"
       INSTANCE_SSH_KEY = local_file.file_pem_ssh.filename
       FW_TEMPSSH_NAME  = google_compute_firewall.fw_tempssh.name
-      SSM_PARAM_NAME = google_secret_manager_secret_version.ansible_install_version.name
       VARS_FILE      = "${path.module}/vars.json"
       PLAYBOOK_PATH = "${path.module}/src/ansible/install_original.yml"
     }
@@ -187,7 +186,7 @@ data "cloudflare_zone" "zone_main" {
 }
 
 resource "cloudflare_record" "dnsrecord_main" {
-  zone_id = cloudflare_zone.zone_main.id
+  zone_id = data.cloudflare_zone.zone_main.id
   name    = var.dns_record
   type    = "A"
   value   = google_compute_instance.instance_main.network_interface[0].access_config[0].nat_ip
@@ -197,7 +196,7 @@ resource "cloudflare_record" "dnsrecord_main" {
 }
 
 resource "cloudflare_zone_settings_override" "zonesettings_main" {
-  zone_id = cloudflare_zone.zone_main.id
+  zone_id = data.cloudflare_zone.zone_main.id
   settings {
     ssl                     = "full"
     min_tls_version         = "1.2"
@@ -207,7 +206,7 @@ resource "cloudflare_zone_settings_override" "zonesettings_main" {
 }
 
 resource "cloudflare_ruleset" "ruleset_cache" {
-  zone_id = cloudflare_zone.zone_main.id
+  zone_id = data.cloudflare_zone.zone_main.id
   name    = "disable_cache_everything"
   kind    = "zone"
   phase   = "http_request_cache_settings"
@@ -223,7 +222,7 @@ resource "cloudflare_ruleset" "ruleset_cache" {
 }
 
 resource "cloudflare_ruleset" "ruleset_waf" {
-  zone_id = cloudflare_zone.zone_main.id
+  zone_id = data.cloudflare_zone.zone_main.id
   name    = "country-access-control"
   kind    = "zone"
   phase   = "http_request_firewall_custom"
