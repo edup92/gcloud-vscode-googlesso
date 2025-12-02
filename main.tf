@@ -162,7 +162,7 @@ resource "null_resource" "null_ansible_install" {
     google_compute_firewall.fw_tempssh,
   ]
   triggers = {
-    instance_id   = google_compute_instance.instance_main
+    instance_id   = google_compute_instance.instance_main.id
     playbook_hash = filesha256("${path.module}/src/ansible/install_original.yml")
   }
   provisioner "local-exec" {
