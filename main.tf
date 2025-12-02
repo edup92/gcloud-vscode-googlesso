@@ -138,7 +138,7 @@ resource "google_compute_firewall" "fw_cf" {
   target_tags   = [google_compute_instance.instance_main.name]
 }
 
-resource "google_compute_firewall" "allow_temp_ssh" {
+resource "google_compute_firewall" "fw_tempssh" {
   name    = local.firewall_tempssh_name
   project = var.gcloud_project_id
   network = "default"
@@ -159,86 +159,24 @@ resource "null_resource" "null_ansible_install" {
   depends_on = [
     local_file.file_pem_ssh,
     google_compute_instance.instance_main,
-    google_compute_firewall.allow_temp_ssh,
-    aws_ssm_parameter.ssm_ansible_install
+    google_compute_firewall.fw_tempssh,
   ]
   triggers = {
     instance_id   = google_compute_instance.instance_main
     playbook_hash = filesha256("${path.module}/src/ansible/install_original.yml")
-    completion_id = aws_ssm_parameter.ssm_ansible_install.value
   }
   provisioner "local-exec" {
     environment = {
-      INSTANCE_IP    = aws_eip.eip_main.public_ip
-      INSTANCE_ID    = aws_instance.instance_main.id
-      FW_TEMPSSH_ID  = aws_security_group.sg_tempssh.id
-      SSH_KEY        = local_file.file_pem_ssh.filename
-      SSM_PARAM_NAME = aws_ssm_parameter.ssm_ansible_install.name
+      PROJECT_ID    = var.gcloud_project_id
+      INSTANCE_IP    = google_compute_instance.instance_main.network_interface[0].access_config[0].nat_ip
+      INSTANCE_USER  = "ubuntu"
+      INSTANCE_SSH_KEY = local_file.file_pem_ssh.filename
+      FW_TEMPSSH_NAME  = google_compute_firewall.fw_tempssh.name
+      SSM_PARAM_NAME = google_secret_manager_secret_version.ansible_install_version.name
       VARS_FILE      = "${path.module}/vars.json"
-      PLAYBOOK_PATH = "${path.module}/src/ansible/install.yml"
+      PLAYBOOK_PATH = "${path.module}/src/ansible/install_original.yml"
     }
     command = "chmod +x ${path.module}/src/null_resource/ansible.sh && ${path.module}/src/null_resource/ansible.sh"
-  }
-}
-
-
-resource "null_resource" "run_ansible" {
-  depends_on = [
-    google_compute_instance.instance_main,
-    google_compute_firewall.allow_temp_ssh
-  ]
-  triggers = {
-    playbook_hash = filesha256("${path.module}/playbook_vscode.yml")
-  }
-  provisioner "local-exec" {
-    command = <<EOT
-  IP=${google_compute_instance.instance_main.network_interface[0].access_config[0].nat_ip}
-
-  # Abrir SSH temporalmente
-  gcloud compute firewall-rules update ${local.firewall_tempssh_name} \
-    --project=${var.gcloud_project_id} \
-    --no-disabled
-
-  echo "Waiting for instance SSH"
-
-  OK=0
-  for i in {1..12}; do   # 12 intentos × 5s = 60s
-    ssh -o BatchMode=yes \
-        -o ConnectTimeout=3 \
-        -o StrictHostKeyChecking=no \
-        -o UserKnownHostsFile=/dev/null \
-        -i "${local_file.file_pem_ssh.filename}" \
-        ubuntu@$IP 'exit' >/dev/null 2>&1 && {
-          echo "SSH disponible"
-          OK=1
-          break
-        }
-    echo "Instance SSH unavailable, retrying"
-    sleep 5
-  done
-
-  if [ "$OK" -ne 1 ]; then
-    echo "ERROR: Instance unaccesible, timeout"
-    gcloud compute firewall-rules update ${local.firewall_tempssh_name} \
-      --project=${var.gcloud_project_id} \
-      --disabled
-    exit 1
-  fi
-
-  # Ejecutar Ansible
-  ansible-playbook \
-    -i "$IP," \
-    --user ubuntu \
-    --private-key "${local_file.file_pem_ssh.filename}" \
-    --extra-vars "@${path.module}/vars.json" \
-    --ssh-extra-args="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
-    playbook.yml
-
-  # Cerrar SSH temporal
-  gcloud compute firewall-rules update ${local.firewall_tempssh_name} \
-    --project=${var.gcloud_project_id} \
-    --disabled
-  EOT
   }
 }
 

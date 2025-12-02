@@ -1,19 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-IP="$INSTANCE_IP"
-INSTANCE_ID="$INSTANCE_ID"
-SG_MAIN="$SG_MAIN_ID"
-SG_TEMP="$SG_TEMPSSH_ID"
-SSH_KEY="$SSH_KEY"
-VARS_FILE="$VARS_FILE"
+# Asignar Fw temporal para SSH
+echo "Assigning temporary SSH firewall: $FW_TEMPSSH_NAME"
 
-# Asignar Security Group temporal para SSH
-echo "Assigning temporary SSH security group: $SG_TEMP"
-
-aws ec2 modify-instance-attribute \
-    --instance-id "$INSTANCE_ID" \
-    --groups "$SG_TEMP"
+gcloud compute firewall-rules update $FW_TEMPSSH_NAME \
+--project=$PROJECT_ID \
+--no-disabled
 
 echo "Temporary SG applied."
 
@@ -26,7 +19,7 @@ for i in {1..14}; do
       -o StrictHostKeyChecking=no \
       -o UserKnownHostsFile=/dev/null \
       -i "$SSH_KEY" \
-      ubuntu@"$IP" 'exit' >/dev/null 2>&1 && {
+      $INSTANCE_USER@"$IP" 'exit' >/dev/null 2>&1 && {
         echo "SSH available."
         OK=1
         break
@@ -36,37 +29,54 @@ for i in {1..14}; do
 done
 
 if [ "$OK" -ne 1 ]; then
-  echo "ERROR: Instance unreachable, restoring main SG..."
-  aws ec2 modify-instance-attribute \
-      --instance-id "$INSTANCE_ID" \
-      --groups "$SG_MAIN"
+  echo "ERROR: Instance unreachable, Restoring main firewall: $FW_TEMPSSH_NAME"
+  # Restaurar SG principal
+
+  gcloud compute firewall-rules update $FW_TEMPSSH_NAME \
+  --project=$PROJECT_ID 
   exit 1
+fi
+
+# Check if is installed
+echo "Checking if playbook was already executed..."
+
+if ssh -o BatchMode=yes \
+      -o ConnectTimeout=3 \
+      -o StrictHostKeyChecking=no \
+      -o UserKnownHostsFile=/dev/null \
+      -i "$SSH_KEY" \
+      $INSTANCE_USER@"$IP" \
+      "test -f /.installed"; then
+
+    echo "Playbook already installed. Exiting."
+    exit 0
 fi
 
 # Ejecutar Ansible
 ansible-playbook \
   -i "$IP," \
-  --user ubuntu \
+  --user $INSTANCE_USER \
   --private-key "$SSH_KEY" \
   --extra-vars "@$VARS_FILE" \
   --ssh-extra-args="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
   "$PLAYBOOK_PATH"
 
-# Restaurar SG principal
-echo "Restoring main security group: $SG_MAIN"
-
-aws ec2 modify-instance-attribute \
-    --instance-id "$INSTANCE_ID" \
-    --groups "$SG_MAIN"
-
 # Marking as installed
 
-echo "Settign as installed in SSM: $SSM_PARAM_NAME"
+echo "Settign as installed"
 
-aws ssm put-parameter \
-  --name "${SSM_PARAM_NAME}" \
-  --value "$(date +%s)" \
-  --type String \
-  --overwrite
+ssh -o BatchMode=yes \
+    -o ConnectTimeout=3 \
+    -o StrictHostKeyChecking=no \
+    -o UserKnownHostsFile=/dev/null \
+    -i "$SSH_KEY" \
+    $INSTANCE_USER@"$IP" \
+    "sudo touch /.installed"
+
+# Restaurar SG principal
+echo "Restoring main firewall: $FW_TEMPSSH_NAME"
+
+gcloud compute firewall-rules update $FW_TEMPSSH_NAME \
+--project=$PROJECT_ID 
 
 echo "DONE"
