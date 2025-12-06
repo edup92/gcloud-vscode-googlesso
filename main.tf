@@ -206,12 +206,18 @@ resource "cloudflare_zone_settings_override" "zonesettings_main" {
 }
 
 resource "cloudflare_ruleset" "ruleset_cache" {
-  count = length(data.cloudflare_rulesets.cache_rulesets.rulesets) == 0 ? 1 : 0
+  count = length([
+    for r in data.cloudflare_rulesets.zone_rulesets.rulesets :
+    r
+    if r.phase == "http_request_cache_settings" && r.kind == "zone"
+  ]) == 0 ? 1 : 0
+
   zone_id     = data.cloudflare_zone.zone_main.id
   name        = "disable_cache_everything"
   description = "Soft disable cache"
   kind        = "zone"
   phase       = "http_request_cache_settings"
+
   rules {
     enabled     = true
     description = "Soft disable cache"
@@ -223,11 +229,14 @@ resource "cloudflare_ruleset" "ruleset_cache" {
   }
 }
 
-
 resource "cloudflare_ruleset" "ruleset_waf" {
-  count = length(data.cloudflare_rulesets.waf_rulesets.rulesets) == 0 ? 1 : 0
+  count = length([
+    for r in data.cloudflare_rulesets.zone_rulesets.rulesets :
+    r
+    if r.phase == "http_request_firewall_custom" && r.kind == "zone"
+  ]) == 0 ? 1 : 0
   zone_id     = data.cloudflare_zone.zone_main.id
-  name        = "country_access_control"
+  name        = "country-access-control"
   description = "Block non-allowed countries"
   kind        = "zone"
   phase       = "http_request_firewall_custom"
