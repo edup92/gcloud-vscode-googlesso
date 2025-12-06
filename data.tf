@@ -3,6 +3,10 @@ data "google_compute_zones" "available" {
 
 data "cloudflare_ip_ranges" "cloudflare" {}
 
+data "cloudflare_zone" "zone_main" {
+  name = var.dns_domain
+}
+
 data "cloudflare_rulesets" "zone_rulesets" {
   zone_id = data.cloudflare_zone.zone_main.id
 }

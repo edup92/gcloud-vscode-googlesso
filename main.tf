@@ -181,10 +181,6 @@ resource "null_resource" "null_ansible_install" {
 
 # Cloudflare
 
-data "cloudflare_zone" "zone_main" {
-  name = var.dns_domain
-}
-
 resource "cloudflare_record" "dnsrecord_main" {
   zone_id = data.cloudflare_zone.zone_main.id
   name    = var.dns_record
