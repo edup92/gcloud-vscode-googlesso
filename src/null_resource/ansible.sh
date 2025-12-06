@@ -18,7 +18,7 @@ for i in {1..14}; do
       -o ConnectTimeout=3 \
       -o StrictHostKeyChecking=no \
       -o UserKnownHostsFile=/dev/null \
-      -i "$SSH_KEY" \
+      -i "$INSTANCE_SSH_KEY" \
       $INSTANCE_USER@"$IP" 'exit' >/dev/null 2>&1 && {
         echo "SSH available."
         OK=1
@@ -44,7 +44,7 @@ if ssh -o BatchMode=yes \
       -o ConnectTimeout=3 \
       -o StrictHostKeyChecking=no \
       -o UserKnownHostsFile=/dev/null \
-      -i "$SSH_KEY" \
+      -i "$INSTANCE_SSH_KEY" \
       $INSTANCE_USER@"$IP" \
       "test -f /.installed"; then
 
@@ -56,7 +56,7 @@ fi
 ansible-playbook \
   -i "$IP," \
   --user $INSTANCE_USER \
-  --private-key "$SSH_KEY" \
+  --private-key "$INSTANCE_SSH_KEY" \
   --extra-vars "@$VARS_FILE" \
   --ssh-extra-args="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
   "$PLAYBOOK_PATH"
@@ -69,7 +69,7 @@ ssh -o BatchMode=yes \
     -o ConnectTimeout=3 \
     -o StrictHostKeyChecking=no \
     -o UserKnownHostsFile=/dev/null \
-    -i "$SSH_KEY" \
+    -i "$INSTANCE_SSH_KEY" \
     $INSTANCE_USER@"$IP" \
     "sudo touch /.installed"
 
